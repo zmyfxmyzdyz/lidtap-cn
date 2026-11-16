@@ -68,12 +68,12 @@ enum UpdateError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .unreadableFeed: "GitHub's answer didn't describe a LidTap release."
-        case .noDownload: "The latest release has no LidTap-macOS.zip to download."
-        case .network(let m): "Couldn't reach GitHub: \(m)"
-        case .badArchive: "The download didn't contain LidTap.app."
-        case .notSigned: "The download isn't signed by LidTap's developer, so it wasn't installed."
-        case .notNewer(let v): "The download is version \(v), which isn't newer than this one."
+        case .unreadableFeed: L10n.tr("GitHub's answer didn't describe a LidTap release.")
+        case .noDownload: L10n.tr("The latest release has no LidTap-macOS.zip to download.")
+        case .network(let m): L10n.tr("Couldn't reach GitHub: %@", m)
+        case .badArchive: L10n.tr("The download didn't contain LidTap.app.")
+        case .notSigned: L10n.tr("The download isn't signed by LidTap's developer, so it wasn't installed.")
+        case .notNewer(let v): L10n.tr("The download is version %@, which isn't newer than this one.", v)
         case .cantReplace(let m): m
         }
     }
@@ -130,11 +130,11 @@ enum UpdateInstaller {
     /// Where the update goes: the running app's bundle, if LidTap can replace it.
     static func destination(for bundle: URL = Bundle.main.bundleURL) throws -> URL {
         if bundle.path.contains("/AppTranslocation/") {
-            throw UpdateError.cantReplace("Move LidTap to your Applications folder first, then update.")
+            throw UpdateError.cantReplace(L10n.tr("Move LidTap to your Applications folder first, then update."))
         }
         let parent = bundle.deletingLastPathComponent()
         guard FileManager.default.isWritableFile(atPath: parent.path) else {
-            throw UpdateError.cantReplace("LidTap can't write to \(parent.path). Download the update from GitHub instead.")
+            throw UpdateError.cantReplace(L10n.tr("LidTap can't write to %@. Download the update from GitHub instead.", parent.path))
         }
         return bundle
     }
@@ -165,7 +165,7 @@ enum UpdateInstaller {
         p.arguments = ["-c", swapScript, "lidtap-update", String(pid), new.path, dest.path, relaunch ? "1" : "0", old.path]
         p.standardOutput = FileHandle.nullDevice
         p.standardError = FileHandle.nullDevice
-        do { try p.run() } catch { throw UpdateError.cantReplace("Couldn't start the installer: \(error.localizedDescription)") }
+        do { try p.run() } catch { throw UpdateError.cantReplace(L10n.tr("Couldn't start the installer: %@", error.localizedDescription)) }
         return p
     }
 }
@@ -221,7 +221,7 @@ final class Updater {
         do {
             let (data, response) = try await session.data(from: feed)
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
-                throw UpdateError.network(http.statusCode == 404 ? "no release published yet" : "GitHub answered \(http.statusCode)")
+                throw UpdateError.network(http.statusCode == 404 ? L10n.tr("no release published yet") : L10n.tr("GitHub answered %d", http.statusCode))
             }
             let release = try Release.parse(data)
             defaults.set(Date(), forKey: "updateLastChecked")

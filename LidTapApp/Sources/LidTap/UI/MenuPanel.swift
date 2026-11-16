@@ -40,14 +40,14 @@ struct MenuPanel: View {
             }
             Divider().padding(.horizontal, 8)
             VStack(spacing: 0) {
-                MenuRow(title: "Privacy Guard", symbol: "eye.slash") { dismiss(); app.privacyGuard.toggle() }
+                MenuRow(title: L10n.tr("Privacy Guard"), symbol: "eye.slash") { dismiss(); app.privacyGuard.toggle() }
                     .help("Mute every microphone, turn your meeting camera off and hide the screen")
                 if app.isTrained {
-                    MenuRow(title: "Calibrate Again…", symbol: "scope") { dismiss(); app.startCalibration() }
+                    MenuRow(title: L10n.tr("Calibrate Again…"), symbol: "scope") { dismiss(); app.startCalibration() }
                 }
-                MenuRow(title: "Settings…", symbol: "gearshape", shortcut: "⌘,") { dismiss(); app.showSettings() }
+                MenuRow(title: L10n.tr("Settings…"), symbol: "gearshape", shortcut: "⌘,") { dismiss(); app.showSettings() }
                     .keyboardShortcut(",", modifiers: .command)
-                MenuRow(title: "Quit LidTap", symbol: "power", shortcut: "⌘Q") { NSApp.terminate(nil) }
+                MenuRow(title: L10n.tr("Quit LidTap"), symbol: "power", shortcut: "⌘Q") { NSApp.terminate(nil) }
                     .keyboardShortcut("q", modifiers: .command)
             }
             .padding(6)
@@ -71,20 +71,22 @@ struct MenuPanel: View {
             Toggle("LidTap", isOn: enabled)
                 .toggleStyle(.switch)
                 .labelsHidden()
-                .help(app.config.enabled ? "Pause LidTap" : "Resume LidTap")
+                .help(Text(app.config.enabled ? L10n.tr("Pause LidTap") : L10n.tr("Resume LidTap")))
         }
     }
 
     private var statusLine: String {
-        if let e = app.status.error, !e.isEmpty { return "Motion sensor unavailable" }
-        if app.status.rate < 50 { return "Starting the motion sensor…" }
-        if app.privacyGuard.isActive { return "Privacy Guard is on" }
-        if app.calibration != nil { return "Calibrating" }
-        if !app.config.enabled { return "Paused" }
-        if app.isTraining { return "Learning your taps…" }
-        guard app.isTrained else { return "Not calibrated yet" }
-        let acc = app.accuracy.map { " · \(Int(($0 * 100).rounded()))% accurate" } ?? ""
-        return "Listening on \(app.grid.title)\(acc)"
+        if let e = app.status.error, !e.isEmpty { return L10n.tr("Motion sensor unavailable") }
+        if app.status.rate < 50 { return L10n.tr("Starting the motion sensor…") }
+        if app.privacyGuard.isActive { return L10n.tr("Privacy Guard is on") }
+        if app.calibration != nil { return L10n.tr("Calibrating") }
+        if !app.config.enabled { return L10n.tr("Paused") }
+        if app.isTraining { return L10n.tr("Learning your taps…") }
+        guard app.isTrained else { return L10n.tr("Not calibrated yet") }
+        if let acc = app.accuracy {
+            return L10n.tr("Listening on %@ · %d%% accurate", app.grid.title, Int((acc * 100).rounded()))
+        }
+        return L10n.tr("Listening on %@", app.grid.title)
     }
 
     // MARK: Notices
@@ -96,12 +98,12 @@ struct MenuPanel: View {
             return Notice(symbol: "exclamationmark.triangle.fill", text: e, button: nil, action: nil)
         }
         if !app.status.accessibility {
-            return Notice(symbol: "hand.raised.fill", text: "Allow Accessibility to switch desktops and control music.",
-                          button: "Allow…", action: { Permissions.requestAccessibility(); Permissions.openPrivacyPane("Privacy_Accessibility") })
+            return Notice(symbol: "hand.raised.fill", text: L10n.tr("Allow Accessibility to switch desktops and control music."),
+                          button: L10n.tr("Allow…"), action: { Permissions.requestAccessibility(); Permissions.openPrivacyPane("Privacy_Accessibility") })
         }
         if let update = app.updater.available, app.updater.state == .available {
-            return Notice(symbol: "arrow.down.circle.fill", text: "LidTap \(update.version.description) is available.",
-                          button: "Update…", action: { dismiss(); app.showUpdate() })
+            return Notice(symbol: "arrow.down.circle.fill", text: L10n.tr("LidTap %@ is available.", update.version.description),
+                          button: L10n.tr("Update…"), action: { dismiss(); app.showUpdate() })
         }
         return nil
     }
@@ -126,8 +128,8 @@ struct MenuPanel: View {
     private var firstRun: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(app.config.hasProfiles
-                 ? "Calibrate “\(app.config.activeProfile?.name ?? "")” on this surface: tap each highlighted zone a few times. About two minutes."
-                 : "Tap each highlighted zone a few times so LidTap learns your screen. About two minutes.")
+                 ? L10n.tr("Calibrate “%@” on this surface: tap each highlighted zone a few times. About two minutes.", app.config.activeProfile?.displayName ?? "")
+                 : L10n.tr("Tap each highlighted zone a few times so LidTap learns your screen. About two minutes."))
                 .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Button { dismiss(); app.startCalibration() } label: {
                 Text("Calibrate").frame(maxWidth: .infinity)
@@ -146,7 +148,7 @@ struct ZoneActionMenu: View {
 
     var body: some View {
         let current = app.action(for: zone).kind
-        Text("Zone \(zone + 1)")
+        Text(L10n.tr("Zone %d", zone + 1))
         ForEach(ActionKind.allCases.filter { !$0.needsChoice }) { kind in
             Button {
                 app.setAction(ZoneAction(kind: kind), for: zone)

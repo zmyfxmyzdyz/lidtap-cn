@@ -155,7 +155,7 @@ final class IMUReader {
             if kind == .accel { foundAccel = true } else { foundGyro = true }
         }
         if !foundAccel && !foundGyro {
-            throw OpenError(description: "No motion sensor found. LidTap needs an M2-or-later MacBook, or an M1 Pro/Max.")
+            throw OpenError(description: L10n.tr("No motion sensor found. LidTap needs an M2-or-later MacBook, or an M1 Pro/Max."))
         }
     }
 

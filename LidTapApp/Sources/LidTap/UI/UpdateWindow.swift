@@ -12,7 +12,7 @@ final class UpdateWindow: NSObject, NSWindowDelegate {
             let host = NSHostingController(rootView: UpdateView(updater: updater, close: { [weak self] in self?.close() }))
             host.sizingOptions = [.preferredContentSize]
             let w = NSWindow(contentViewController: host)
-            w.title = "Software Update"
+            w.title = L10n.tr("Software Update")
             w.styleMask = [.titled, .closable]
             w.isReleasedWhenClosed = false
             w.delegate = self
@@ -54,15 +54,15 @@ struct UpdateView: View {
 
         case .upToDate:
             Text("LidTap is up to date").font(.headline)
-            Text("You have the latest version, \(updater.current.description).").foregroundStyle(.secondary)
+            Text(L10n.tr("You have the latest version, %@.", updater.current.description)).foregroundStyle(.secondary)
             buttons { Button("OK", action: close).keyboardShortcut(.defaultAction) }
 
         case .available:
             if let release = updater.available { available(release) }
 
         case .downloading, .installing:
-            Text(updater.state == .downloading ? "Downloading LidTap \(updater.available?.version.description ?? "")…"
-                                               : "Installing… LidTap will reopen in a moment.")
+            Text(updater.state == .downloading ? L10n.tr("Downloading LidTap %@…", updater.available?.version.description ?? "")
+                                               : L10n.tr("Installing… LidTap will reopen in a moment."))
                 .font(.headline)
             ProgressView().progressViewStyle(.linear)
 
@@ -83,7 +83,7 @@ struct UpdateView: View {
     @ViewBuilder
     private func available(_ release: Release) -> some View {
         Text("A new version of LidTap is available").font(.headline)
-        Text("LidTap \(release.version.description) is available. You have \(updater.current.description). Would you like to install it now?")
+        Text(L10n.tr("LidTap %@ is available. You have %@. Would you like to install it now?", release.version.description, updater.current.description))
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
         if !release.notes.isEmpty {

@@ -7,37 +7,37 @@ enum ActionKind: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .none: "Nothing"
-        case .desktopLeft: "Desktop Left"
-        case .desktopRight: "Desktop Right"
-        case .newNote: "New Note"
-        case .playPause: "Play / Pause"
-        case .nextTrack: "Next Track"
-        case .previousTrack: "Previous Track"
-        case .volumeUp: "Volume Up"
-        case .volumeDown: "Volume Down"
-        case .mute: "Mute Sound"
-        case .openApp: "Open App"
-        case .runShortcut: "Run Shortcut"
-        case .privacyGuard: "Privacy Guard"
+        case .none: L10n.tr("Nothing")
+        case .desktopLeft: L10n.tr("Desktop Left")
+        case .desktopRight: L10n.tr("Desktop Right")
+        case .newNote: L10n.tr("New Note")
+        case .playPause: L10n.tr("Play / Pause")
+        case .nextTrack: L10n.tr("Next Track")
+        case .previousTrack: L10n.tr("Previous Track")
+        case .volumeUp: L10n.tr("Volume Up")
+        case .volumeDown: L10n.tr("Volume Down")
+        case .mute: L10n.tr("Mute Sound")
+        case .openApp: L10n.tr("Open App")
+        case .runShortcut: L10n.tr("Run Shortcut")
+        case .privacyGuard: L10n.tr("Privacy Guard")
         }
     }
 
     var detail: String {
         switch self {
-        case .none: "This zone does nothing"
-        case .desktopLeft: "Switch to the Space on the left"
-        case .desktopRight: "Switch to the Space on the right"
-        case .newNote: "Open Notes with a fresh note"
-        case .playPause: "Play or pause whatever is playing"
-        case .nextTrack: "Skip to the next track"
-        case .previousTrack: "Go back a track"
-        case .volumeUp: "Turn the sound up one step"
-        case .volumeDown: "Turn the sound down one step"
-        case .mute: "Mute or unmute the sound"
-        case .openApp: "Launch an app, or bring it to the front"
-        case .runShortcut: "Run one of your Shortcuts"
-        case .privacyGuard: "Mute, camera off and blur the screen"
+        case .none: L10n.tr("This zone does nothing")
+        case .desktopLeft: L10n.tr("Switch to the Space on the left")
+        case .desktopRight: L10n.tr("Switch to the Space on the right")
+        case .newNote: L10n.tr("Open Notes with a fresh note")
+        case .playPause: L10n.tr("Play or pause whatever is playing")
+        case .nextTrack: L10n.tr("Skip to the next track")
+        case .previousTrack: L10n.tr("Go back a track")
+        case .volumeUp: L10n.tr("Turn the sound up one step")
+        case .volumeDown: L10n.tr("Turn the sound down one step")
+        case .mute: L10n.tr("Mute or unmute the sound")
+        case .openApp: L10n.tr("Launch an app, or bring it to the front")
+        case .runShortcut: L10n.tr("Run one of your Shortcuts")
+        case .privacyGuard: L10n.tr("Mute, camera off and blur the screen")
         }
     }
 
@@ -76,12 +76,12 @@ enum ActionKind: String, Codable, CaseIterable, Identifiable {
     /// Short group used to organise the action picker.
     var group: String {
         switch self {
-        case .none: "None"
-        case .desktopLeft, .desktopRight: "Desktop"
-        case .playPause, .nextTrack, .previousTrack: "Music"
-        case .volumeUp, .volumeDown, .mute: "Sound"
-        case .newNote, .openApp, .runShortcut: "Apps"
-        case .privacyGuard: "Privacy"
+        case .none: L10n.tr("None")
+        case .desktopLeft, .desktopRight: L10n.tr("Desktop")
+        case .playPause, .nextTrack, .previousTrack: L10n.tr("Music")
+        case .volumeUp, .volumeDown, .mute: L10n.tr("Sound")
+        case .newNote, .openApp, .runShortcut: L10n.tr("Apps")
+        case .privacyGuard: L10n.tr("Privacy")
         }
     }
 

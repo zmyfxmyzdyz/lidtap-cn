@@ -112,9 +112,9 @@ private struct TapStage: View {
         .onChange(of: cal.flashID) {
             if case .ignored(let reason) = cal.flash {
                 withAnimation(DS.Motion.state) {
-                    ignoredText = reason == "too soft" ? "Not recorded: a little crisper, please"
-                        : reason == "still moving" ? "Wait for the screen to settle, then tap"
-                        : "Ignored (\(reason)). Tap again"
+                    ignoredText = reason == "too soft" ? L10n.tr("Not recorded: a little crisper, please")
+                        : reason == "still moving" ? L10n.tr("Wait for the screen to settle, then tap")
+                        : L10n.tr("Ignored (%@). Tap again", L10n.tr(reason))
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { withAnimation(DS.Motion.state) { ignoredText = nil } }
             }
@@ -125,7 +125,7 @@ private struct TapStage: View {
         HStack(spacing: 14) {
             Image(systemName: "scope").font(.headline).foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 5) {
-                Text(ignoredText ?? "Calibrating \(cal.grid.title)")
+                Text(ignoredText ?? L10n.tr("Calibrating %@", cal.grid.title))
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(ignoredText == nil ? Color.primary : Color.orange)
                     .contentTransition(.opacity)
@@ -133,7 +133,7 @@ private struct TapStage: View {
                     .progressViewStyle(.linear)
                     .frame(width: 200)
             }
-            Text("\(cal.position) of \(cal.sequence.count)")
+            Text(L10n.tr("%d of %d", cal.position, cal.sequence.count))
                 .font(.callout).monospacedDigit().foregroundStyle(.secondary)
                 .contentTransition(.numericText())
                 .animation(DS.Motion.feedback, value: cal.position)
@@ -174,10 +174,10 @@ private struct TapStage: View {
             if let r = app.ripple, r.zone == i { Ripple(color: .accentColor, trigger: r.id).padding(40) }
             VStack(spacing: 8) {
                 if isTarget {
-                    Text("Zone \(i + 1)")
+                    Text(L10n.tr("Zone %d", i + 1))
                         .font(.system(.headline, design: .rounded))
                         .foregroundStyle(.white.opacity(0.75))
-                    Text(cal.remainingInBlock > 1 ? "Tap the dot \(cal.remainingInBlock) times" : "Tap the dot once")
+                    Text(cal.remainingInBlock > 1 ? L10n.tr("Tap the dot %d times", cal.remainingInBlock) : L10n.tr("Tap the dot once"))
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(.white)
                         .contentTransition(.numericText())
@@ -188,7 +188,7 @@ private struct TapStage: View {
                     Text("\(i + 1)")
                         .font(.system(size: 44, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.white.opacity(0.22))
-                    Text("\(done) of \(cal.perZone)")
+                    Text(L10n.tr("%d of %d", done, cal.perZone))
                         .font(.callout).monospacedDigit()
                         .foregroundStyle(.white.opacity(done >= cal.perZone ? 0.55 : 0.35))
                 }
@@ -202,7 +202,7 @@ private struct TapStage: View {
         }
         .animation(DS.Motion.state, value: isTarget)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(isTarget ? "Zone \(i + 1). Tap here" : "Zone \(i + 1), \(done) of \(cal.perZone) taps")
+        .accessibilityLabel(isTarget ? L10n.tr("Zone %d. Tap here", i + 1) : L10n.tr("Zone %d, %d of %d taps", i + 1, done, cal.perZone))
     }
 }
 
@@ -233,10 +233,10 @@ private struct StrengthMeter: View {
     private var scaleMax: Double { minimum * 4 }
 
     private var verdict: (String, Color) {
-        guard let s = strength else { return ("Tap strength", .secondary) }
-        if s < minimum { return ("A little crisper", .orange) }
-        if s > AppModel.gentlerAbove { return ("Gentler is fine", .yellow) }
-        return ("Good tap", .green)
+        guard let s = strength else { return (L10n.tr("Tap strength"), .secondary) }
+        if s < minimum { return (L10n.tr("A little crisper"), .orange) }
+        if s > AppModel.gentlerAbove { return (L10n.tr("Gentler is fine"), .yellow) }
+        return (L10n.tr("Good tap"), .green)
     }
 
     var body: some View {
@@ -258,7 +258,7 @@ private struct StrengthMeter: View {
         }
         .animation(DS.Motion.feedback, value: id)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(strength.map { String(format: "%@, %.1f degrees per second", verdict.0, $0) } ?? "Tap strength")
+        .accessibilityLabel(strength.map { L10n.tr("%@, %.1f degrees per second", verdict.0, $0) } ?? L10n.tr("Tap strength"))
     }
 }
 
@@ -283,7 +283,7 @@ private struct NoisePromptStage: View {
         StagePanel {
             Image(systemName: "checkmark.circle").font(.system(size: 40, weight: .light)).foregroundStyle(.green)
                 .symbolEffect(.bounce, value: true)
-            Text("All \(cal.grid.count) zones recorded").font(.title.weight(.semibold))
+            Text(L10n.tr("All %d zones recorded", cal.grid.count)).font(.title.weight(.semibold))
             Text("Recommended: show LidTap what isn't a tap, so it learns to ignore it. For 20 seconds, type a sentence, click the trackpad, knock the desk and nudge the lid. Just don't tap the screen.")
                 .font(.body).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 10) {
@@ -316,7 +316,7 @@ private struct NoiseStage: View {
             Text("Recording what isn't a tap").font(.title2.weight(.semibold))
             Text("Type, click the trackpad, knock the desk, adjust the lid. Anything except tapping the screen.")
                 .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            Text("\(app.count(for: noiseLabel)) bumps so far").font(.callout).monospacedDigit().foregroundStyle(.tertiary)
+            Text(L10n.tr("%d bumps so far", app.count(for: noiseLabel))).font(.callout).monospacedDigit().foregroundStyle(.tertiary)
         }
     }
 }
@@ -328,7 +328,7 @@ private struct TrainingStage: View {
         StagePanel {
             ProgressView().controlSize(.large)
             Text("Learning your taps").font(.title2.weight(.semibold))
-            Text("Checking \(app.dataset.samples.count) recorded taps against each other, so the accuracy you see is honest.")
+            Text(L10n.tr("Checking %d recorded taps against each other, so the accuracy you see is honest.", app.dataset.samples.count))
                 .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -342,7 +342,7 @@ private struct DoneStage: View {
             if let report = app.report, let kind = app.activeKind {
                 let acc = report.accuracy(kind) ?? 0
                 VStack(spacing: 6) {
-                    Text("\(Int((acc * 100).rounded()))% of taps land in the right zone")
+                    Text(L10n.tr("%d%% of taps land in the right zone", Int((acc * 100).rounded())))
                         .font(.largeTitle.weight(.semibold))
                     Text(summary(report, kind))
                         .font(.title3).foregroundStyle(.secondary)
@@ -369,13 +369,20 @@ private struct DoneStage: View {
     }
 
     private func summary(_ r: ModelReport, _ kind: ModelKind) -> String {
-        let parts = r.layouts.filter { $0 != Layouts.full }.compactMap { l in r.accuracy(kind, l).map { "\(l.lowercased()) \(Int(($0 * 100).rounded()))%" } }
-        return "\(r.sampleCount) taps on \(r.grid.title)" + (parts.isEmpty ? "" : " · " + parts.joined(separator: " · "))
+        let parts = r.layouts.filter { $0 != Layouts.full }.compactMap { layout -> String? in
+            r.accuracy(kind, layout).map { L10n.tr("%@ %d%%", L10n.tr(layout), Int(($0 * 100).rounded())) }
+        }
+        let base = L10n.tr("%d taps on %@", r.sampleCount, r.grid.title)
+        return parts.isEmpty ? base : base + " · " + parts.joined(separator: " · ")
     }
 
     private func advice(_ r: ModelReport) -> String {
         let weak = r.zoneReliability.filter { $0.value < 0.85 }.keys.sorted().map { "\($0 + 1)" }
-        if weak.isEmpty { return "Every zone is reliable. Tap gently, the way you just did." }
-        return "Zone \(weak.joined(separator: ", ")) " + (weak.count == 1 ? "gets" : "get") + " mixed up more often. Add a few more taps there, or switch to fewer zones."
+        if weak.isEmpty { return L10n.tr("Every zone is reliable. Tap gently, the way you just did.") }
+        let list = weak.joined(separator: ", ")
+        if weak.count == 1 {
+            return L10n.tr("Zone %@ gets mixed up more often. Add a few more taps there, or switch to fewer zones.", list)
+        }
+        return L10n.tr("Zones %@ get mixed up more often. Add a few more taps there, or switch to fewer zones.", list)
     }
 }

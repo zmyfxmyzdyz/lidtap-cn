@@ -71,9 +71,9 @@ struct ZoneModel {
         let novelty = radius[c].isFinite ? nearest / radius[c] : 0
         var rejected: String?
         if classes[c] == noiseLabel {
-            rejected = "Looks like a bump, not a tap"
+            rejected = L10n.tr("Looks like a bump, not a tap")
         } else if novelty > rejectFactor {
-            rejected = "Unfamiliar tap"
+            rejected = L10n.tr("Unfamiliar tap")
         }
         return Prediction(label: classes[c], confidence: p[c], novelty: novelty, rejected: rejected)
     }

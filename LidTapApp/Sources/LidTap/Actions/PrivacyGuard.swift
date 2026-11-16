@@ -234,7 +234,7 @@ struct PrivacyOverlayView: View {
                     .foregroundStyle(.white)
                 if let since = guardState.since {
                     TimelineView(.periodic(from: since, by: 1)) { ctx in
-                        Text("for \(Duration.seconds(ctx.date.timeIntervalSince(since)).formatted(.time(pattern: .minuteSecond)))")
+                        Text(L10n.tr("for %@", Duration.seconds(ctx.date.timeIntervalSince(since)).formatted(.time(pattern: .minuteSecond))))
                             .font(.title3).monospacedDigit()
                             .foregroundStyle(.white.opacity(0.6))
                     }
@@ -285,10 +285,10 @@ struct PrivacyOverlayView: View {
 
     private var micText: String {
         switch guardState.mic {
-        case .muted(let n): n == 1 ? "Microphone muted" : "\(n) microphones muted"
-        case .unavailable: "Couldn't mute the microphone"
-        case .skipped: "Microphone left on (your setting)"
-        case .idle: "Muting the microphone…"
+        case .muted(let n): n == 1 ? L10n.tr("Microphone muted") : L10n.tr("%d microphones muted", n)
+        case .unavailable: L10n.tr("Couldn't mute the microphone")
+        case .skipped: L10n.tr("Microphone left on (your setting)")
+        case .idle: L10n.tr("Muting the microphone…")
         }
     }
 
@@ -305,12 +305,12 @@ struct PrivacyOverlayView: View {
 
     private var cameraText: String {
         switch guardState.camera {
-        case .checking, .idle: "Checking the camera…"
-        case .notInUse: "Camera isn't in use"
-        case .turnedOff(let app): "Camera turned off in \(app)"
-        case .stillOn(let app): app.map { "Camera may still be on in \($0)" } ?? "Camera is on in an app LidTap can't control"
-        case .needsAccessibility: "Camera is on. Allow Accessibility so LidTap can turn it off"
-        case .skipped: "Camera left alone (your setting)"
+        case .checking, .idle: L10n.tr("Checking the camera…")
+        case .notInUse: L10n.tr("Camera isn't in use")
+        case .turnedOff(let app): L10n.tr("Camera turned off in %@", app)
+        case .stillOn(let app): app.map { L10n.tr("Camera may still be on in %@", $0) } ?? L10n.tr("Camera is on in an app LidTap can't control")
+        case .needsAccessibility: L10n.tr("Camera is on. Allow Accessibility so LidTap can turn it off")
+        case .skipped: L10n.tr("Camera left alone (your setting)")
         }
     }
 

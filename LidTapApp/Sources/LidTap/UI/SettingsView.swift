@@ -6,7 +6,16 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     /// Panes showing the active profile's settings.
     var isPerProfile: Bool { self == .zones || self == .training || self == .detection }
-    var title: String { rawValue.capitalized }
+    var title: String {
+        switch self {
+        case .zones: L10n.tr("Zones")
+        case .profiles: L10n.tr("Profiles")
+        case .training: L10n.tr("Training")
+        case .detection: L10n.tr("Detection")
+        case .permissions: L10n.tr("Permissions")
+        case .general: L10n.tr("General")
+        }
+    }
     var symbol: String {
         switch self {
         case .zones: "rectangle.split.2x2"
@@ -79,7 +88,7 @@ private struct ZonesPane: View {
                     .frame(maxWidth: .infinity, alignment: .center)
             }
 
-            Section("Zone \(selected + 1)") {
+            Section(L10n.tr("Zone %d", selected + 1)) {
                 Picker("Action", selection: Binding(
                     get: { current.kind },
                     set: { kind in
@@ -97,7 +106,7 @@ private struct ZonesPane: View {
                     LabeledContent("App") {
                         HStack(spacing: 8) {
                             if current.appBundleID != nil { ActionGlyph(action: current, size: 14) }
-                            Text(current.appName ?? "None chosen").foregroundStyle(current.appName == nil ? .secondary : .primary)
+                            Text(current.appName ?? L10n.tr("None chosen")).foregroundStyle(current.appName == nil ? .secondary : .primary)
                             Button("Choose…") { choosingApp = true }
                         }
                     }
@@ -105,7 +114,7 @@ private struct ZonesPane: View {
                 if current.kind == .runShortcut {
                     LabeledContent("Shortcut") {
                         HStack(spacing: 8) {
-                            Text(current.shortcutName ?? "None chosen").foregroundStyle(current.shortcutName == nil ? .secondary : .primary)
+                            Text(current.shortcutName ?? L10n.tr("None chosen")).foregroundStyle(current.shortcutName == nil ? .secondary : .primary)
                             Button("Choose…") { choosingShortcut = true }
                         }
                     }
@@ -145,14 +154,14 @@ private struct ZonesPane: View {
             }
         }
         .onChange(of: app.grid) { selected = 0 }
-        .alert("Switch to \(pendingGrid?.title ?? "")?", isPresented: Binding(get: { pendingGrid != nil }, set: { if !$0 { pendingGrid = nil } })) {
+        .alert(L10n.tr("Switch to %@?", pendingGrid?.title ?? ""), isPresented: Binding(get: { pendingGrid != nil }, set: { if !$0 { pendingGrid = nil } })) {
             Button("Cancel", role: .cancel) { pendingGrid = nil }
             Button("Switch and Calibrate") {
                 if let g = pendingGrid { app.startCalibration(grid: g) }
                 pendingGrid = nil
             }
         } message: {
-            Text("The \(app.dataset.zoneTapCount) taps recorded for \(app.grid.title) will be replaced. Your bump examples are kept.")
+            Text(L10n.tr("The %d taps recorded for %@ will be replaced. Your bump examples are kept.", app.dataset.zoneTapCount, app.grid.title))
         }
         .sheet(isPresented: $choosingApp) {
             AppPicker { info in
@@ -291,14 +300,14 @@ private struct TrainingPane: View {
         Form {
             Section {
                 LabeledContent("Accuracy") {
-                    Text(app.accuracy.map { "\(Int(($0 * 100).rounded()))% of taps land in the right zone" } ?? "Not trained yet")
+                    Text(app.accuracy.map { L10n.tr("%d%% of taps land in the right zone", Int(($0 * 100).rounded())) } ?? L10n.tr("Not trained yet"))
                         .foregroundStyle(app.accuracy == nil ? .secondary : .primary)
                 }
                 LabeledContent("Recorded") {
                     VStack(alignment: .trailing, spacing: 1) {
-                        Text("\(app.dataset.zoneTapCount - app.softTapCount) taps, \(app.count(for: noiseLabel)) bumps")
+                        Text(L10n.tr("%d taps, %d bumps", app.dataset.zoneTapCount - app.softTapCount, app.count(for: noiseLabel)))
                         if app.softTapCount > 0 {
-                            Text(String(format: "%d softer than %.1f °/s, not used", app.softTapCount, app.minTapStrength))
+                            Text(L10n.tr("%d softer than %.1f °/s, not used", app.softTapCount, app.minTapStrength))
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
@@ -387,7 +396,7 @@ private struct TrainingPane: View {
                         if label == noiseLabel {
                             Label("Bumps", systemImage: "waveform.badge.minus")
                         } else {
-                            Label { Text("Zone \((zoneIndex(label) ?? 0) + 1)") } icon: { ActionGlyph(action: app.action(for: zoneIndex(label) ?? 0), size: 12) }
+                            Label { Text(L10n.tr("Zone %d", (zoneIndex(label) ?? 0) + 1)) } icon: { ActionGlyph(action: app.action(for: zoneIndex(label) ?? 0), size: 12) }
                         }
                     }
                 }
@@ -397,7 +406,7 @@ private struct TrainingPane: View {
                 HStack { Spacer(); Button("Delete All…", role: .destructive) { confirmDeleteAll = true }.disabled(app.dataset.samples.isEmpty) }
             }
         }
-        .confirmationDialog("Delete all \(app.dataset.samples.count) recorded taps?", isPresented: $confirmDeleteAll) {
+        .confirmationDialog(L10n.tr("Delete all %d recorded taps?", app.dataset.samples.count), isPresented: $confirmDeleteAll) {
             Button("Delete All Taps", role: .destructive) { app.clearData() }
         } message: {
             Text("LidTap will stop recognising zones until you calibrate again.")
@@ -408,7 +417,7 @@ private struct TrainingPane: View {
         SwiftUI.Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 8) {
             GridRow {
                 Text("Recogniser").foregroundStyle(.secondary)
-                ForEach(report.layouts, id: \.self) { Text($0).foregroundStyle(.secondary).gridColumnAlignment(.trailing) }
+                ForEach(report.layouts, id: \.self) { Text(L10n.tr($0)).foregroundStyle(.secondary).gridColumnAlignment(.trailing) }
             }
             .font(.caption)
             Divider()
@@ -433,16 +442,19 @@ private struct TrainingPane: View {
     private func confusion(_ report: ModelReport) -> some View {
         let cm = report.confusion ?? []
         let short = report.labels.map { $0 == noiseLabel ? "Bump" : "\((zoneIndex($0) ?? 0) + 1)" }
+        func axis(_ token: String) -> String {
+            token == "Bump" ? L10n.tr("Bump") : L10n.tr("Zone %d", Int(token) ?? 0)
+        }
         return VStack(alignment: .leading, spacing: 8) {
             SwiftUI.Grid(horizontalSpacing: 3, verticalSpacing: 3) {
                 GridRow {
                     Text("Tapped ↓  Read as →").font(.caption2).foregroundStyle(.secondary).gridCellColumns(1)
-                    ForEach(short.indices, id: \.self) { Text(short[$0]).font(.caption).foregroundStyle(.secondary).frame(width: 34) }
+                    ForEach(short.indices, id: \.self) { Text(axis(short[$0])).font(.caption).foregroundStyle(.secondary).frame(width: 34) }
                 }
                 ForEach(cm.indices, id: \.self) { i in
                     let total = max(cm[i].reduce(0, +), 1)
                     GridRow {
-                        Text(i < short.count ? (short[i] == "Bump" ? "Bump" : "Zone \(short[i])") : "").font(.caption).foregroundStyle(.secondary)
+                        Text(i < short.count ? axis(short[i]) : "").font(.caption).foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                         ForEach(cm[i].indices, id: \.self) { j in
                             let v = cm[i][j], share = Double(v) / Double(total)
@@ -463,9 +475,9 @@ private struct TrainingPane: View {
 
     private func learning(_ report: ModelReport) -> some View {
         Chart(report.learning, id: \.n) { p in
-            LineMark(x: .value("Taps per zone", p.n), y: .value("Accuracy", p.accuracy))
+            LineMark(x: .value(L10n.tr("Taps per zone"), p.n), y: .value(L10n.tr("Accuracy"), p.accuracy))
                 .interpolationMethod(.monotone)
-            PointMark(x: .value("Taps per zone", p.n), y: .value("Accuracy", p.accuracy))
+            PointMark(x: .value(L10n.tr("Taps per zone"), p.n), y: .value(L10n.tr("Accuracy"), p.accuracy))
         }
         .foregroundStyle(Color.accentColor)
         .chartYScale(domain: 0...1)
@@ -473,7 +485,7 @@ private struct TrainingPane: View {
             AxisGridLine()
             AxisValueLabel { Text("\(Int((v.as(Double.self) ?? 0) * 100))%") }
         } }
-        .chartXAxisLabel("Taps per zone")
+        .chartXAxisLabel(L10n.tr("Taps per zone"))
         .frame(height: 160)
         .padding(.vertical, 6)
     }
@@ -500,10 +512,10 @@ private struct DetectionPane: View {
                 Text("Live motion")
             } footer: {
                 HStack(spacing: 14) {
-                    Text(String(format: "%.0f Hz", app.status.rate))
-                    Text(String(format: "Noise %.2f °/s", app.status.noise))
-                    Text(String(format: "Trigger %.2f °/s", app.status.threshold))
-                    if let lid = app.status.lid { Text("Lid \(lid)°") }
+                    Text(L10n.tr("%.0f Hz", app.status.rate))
+                    Text(L10n.tr("Noise %.2f °/s", app.status.noise))
+                    Text(L10n.tr("Trigger %.2f °/s", app.status.threshold))
+                    if let lid = app.status.lid { Text(L10n.tr("Lid %d°", lid)) }
                     Spacer()
                     Text("A tap fires when the line crosses the dashed trigger.")
                 }
@@ -513,15 +525,15 @@ private struct DetectionPane: View {
             Section("Sensitivity") {
                 Toggle(isOn: $app.config.autoTapStrength) {
                     Text("Learn tap strength from my taps")
-                    Text(String(format: "Softer taps than %.1f °/s are not recorded or acted on. A screen tap moves a larger, heavier MacBook less, so LidTap sets this from your own calibration taps", app.minTapStrength))
+                    Text(L10n.tr("Softer taps than %.1f °/s are not recorded or acted on. A screen tap moves a larger, heavier MacBook less, so LidTap sets this from your own calibration taps", app.minTapStrength))
                 }
                 if !app.config.autoTapStrength {
-                    slider("Minimum tap strength", "Lower it if crisp taps are refused as too soft", $app.config.minTapStrength, 0.5...10, 0.1) { String(format: "%.1f °/s", $0) }
+                    slider("Minimum tap strength", "Lower it if crisp taps are refused as too soft", $app.config.minTapStrength, 0.5...10, 0.1) { L10n.tr("%.1f °/s", $0) }
                 }
-                slider("Trigger", "How far above the resting noise a tap must rise", $app.config.detector.k, 2...15, 0.5) { String(format: "%.1f× noise", $0) }
-                slider("Minimum", "Raise if bumps register as taps. Lower if gentle taps are missed", $app.config.detector.minThreshold, 0.2...20, 0.1) { String(format: "%.1f °/s", $0) }
-                slider("Gap between taps", "Shorter allows quicker repeat taps", $app.config.detector.refractory, 0.15...1, 0.05) { String(format: "%.2f s", $0) }
-                slider("Pause after typing", "Taps this soon after a key, click or scroll are ignored", $app.config.detector.gateSeconds, 0...1, 0.05) { String(format: "%.2f s", $0) }
+                slider("Trigger", "How far above the resting noise a tap must rise", $app.config.detector.k, 2...15, 0.5) { L10n.tr("%.1f× noise", $0) }
+                slider("Minimum", "Raise if bumps register as taps. Lower if gentle taps are missed", $app.config.detector.minThreshold, 0.2...20, 0.1) { L10n.tr("%.1f °/s", $0) }
+                slider("Gap between taps", "Shorter allows quicker repeat taps", $app.config.detector.refractory, 0.15...1, 0.05) { L10n.tr("%.2f s", $0) }
+                slider("Pause after typing", "Taps this soon after a key, click or scroll are ignored", $app.config.detector.gateSeconds, 0...1, 0.05) { L10n.tr("%.2f s", $0) }
                 Toggle(isOn: $app.config.detector.gating) {
                     Text("Ignore taps while typing or moving the lid")
                     Text("Keeps keystrokes, clicks and lid adjustments from counting as taps.")
@@ -538,7 +550,7 @@ private struct DetectionPane: View {
                                 Text(r.date, format: .dateTime.hour().minute().second()).monospacedDigit().foregroundStyle(.tertiary)
                             }
                         } label: {
-                            Text(r.label.flatMap(zoneIndex).map { "Zone \($0 + 1) · \(r.detail)" } ?? r.detail).lineLimit(1)
+                            Text(r.label.flatMap(zoneIndex).map { L10n.tr("Zone %d · %@", $0 + 1, r.detail) } ?? r.detail).lineLimit(1)
                         }
                     }
                 } else {
@@ -556,8 +568,8 @@ private struct DetectionPane: View {
                 Text(format(value.wrappedValue)).monospacedDigit().frame(width: 82, alignment: .trailing)
             }
         } label: {
-            Text(title)
-            Text(help)
+            Text(L10n.tr(title))
+            Text(L10n.tr(help))
         }
     }
 }
@@ -572,7 +584,7 @@ private struct PermissionsPane: View {
             Section {
                 row("Motion sensor", "gyroscope",
                     ok: app.status.rate > 500,
-                    detail: app.status.error ?? (app.status.rate > 500 ? String(format: "Streaming at %.0f Hz", app.status.rate) : "Not streaming yet. If it stays this way, allow Input Monitoring."),
+                    detail: app.status.error ?? (app.status.rate > 500 ? L10n.tr("Streaming at %.0f Hz", app.status.rate) : L10n.tr("Not streaming yet. If it stays this way, allow Input Monitoring.")),
                     button: nil)
                 row("Accessibility", "accessibility",
                     ok: app.status.accessibility,
@@ -596,16 +608,16 @@ private struct PermissionsPane: View {
         LabeledContent {
             HStack(spacing: 10) {
                 if let ok {
-                    Label(ok ? "On" : "Off", systemImage: ok ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                    Label(L10n.tr(ok ? "On" : "Off"), systemImage: ok ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
                         .foregroundStyle(ok ? .green : .orange)
                         .labelStyle(.titleAndIcon)
                 }
-                if let (label, action) = button { Button(label, action: action) }
+                if let (label, action) = button { Button(L10n.tr(label), action: action) }
             }
         } label: {
             Label {
-                Text(title)
-                Text(detail)
+                Text(L10n.tr(title))
+                Text(L10n.tr(detail))
             } icon: {
                 Image(systemName: symbol)
             }
@@ -638,7 +650,7 @@ private struct GeneralPane: View {
                 LabeledContent("Version") {
                     HStack(spacing: 10) {
                         Text(app.updater.current.description).monospacedDigit()
-                        Button(app.updater.available != nil ? "Update…" : "Check Now") {
+                        Button(L10n.tr(app.updater.available != nil ? "Update…" : "Check Now")) {
                             app.updater.available != nil ? app.showUpdate() : app.checkForUpdates()
                         }
                     }

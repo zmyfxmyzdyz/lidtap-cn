@@ -68,13 +68,27 @@ struct Profile: Codable, Equatable, Identifiable {
         !id.isEmpty && id.count <= 36 && id.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") }
     }
 
+    var displayName: String { Self.localizedName(name) }
+
+    /// The factory name stays "Default" on disk and is translated only when shown.
+    static func localizedName(_ stored: String) -> String {
+        stored == defaultName ? L10n.tr(defaultName) : stored
+    }
+
+    /// "Default" and its translation both refer to the factory profile, so renaming it doesn't rewrite the file.
+    static func canonicalName(_ entered: String) -> String {
+        let n = entered.trimmingCharacters(in: .whitespacesAndNewlines)
+        if n.caseInsensitiveCompare(defaultName) == .orderedSame || n == L10n.tr(defaultName) { return defaultName }
+        return n
+    }
+
     /// Why `name` can't be used, or nil if it can. `excluding` is the profile being renamed.
     static func problem(with name: String, among profiles: [Profile], excluding: String? = nil) -> String? {
-        let n = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if n.isEmpty { return "Give the profile a name." }
-        if n.count > maxNameLength { return "Use \(maxNameLength) characters or fewer." }
-        if profiles.contains(where: { $0.id != excluding && $0.name.compare(n, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame }) {
-            return "There's already a profile called “\(n)”."
+        let n = canonicalName(name)
+        if n.isEmpty { return L10n.tr("Give the profile a name.") }
+        if n.count > maxNameLength { return L10n.tr("Use %d characters or fewer.", maxNameLength) }
+        if profiles.contains(where: { $0.id != excluding && canonicalName($0.name).compare(n, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame }) {
+            return L10n.tr("There's already a profile called “%@”.", localizedName(n))
         }
         return nil
     }

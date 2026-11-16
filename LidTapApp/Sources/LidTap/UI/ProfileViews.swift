@@ -25,13 +25,13 @@ extension AppModel {
     /// One line describing how a profile is calibrated: live for the profile in use, remembered for the rest.
     func summary(of p: Profile) -> (text: String, needsCalibration: Bool) {
         let active = p.id == config.activeProfileID
-        if active && isTraining { return ("Learning your taps…", false) }
+        if active && isTraining { return (L10n.tr("Learning your taps…"), false) }
         let grid = active ? self.grid : (p.grid ?? self.grid)
         let taps = active ? dataset.zoneTapCount - softTapCount : p.taps
         let acc = active ? (isTrained ? accuracy : nil) : p.accuracy
-        guard taps > 0 else { return ("Not calibrated yet", true) }
-        var parts = [grid.title, "\(taps) taps"]
-        if let acc { parts.append("\(Int((acc * 100).rounded()))% accurate") }
+        guard taps > 0 else { return (L10n.tr("Not calibrated yet"), true) }
+        var parts = [grid.title, L10n.tr("%d taps", taps)]
+        if let acc { parts.append(L10n.tr("%d%% accurate", Int((acc * 100).rounded()))) }
         return (parts.joined(separator: " · "), acc == nil)
     }
 }
@@ -89,7 +89,7 @@ struct ProfileSwitcher: View {
                 Image(systemName: p.symbol)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(on ? Color.accentColor : .secondary)
-                Text(p.name)
+                Text(p.displayName)
                     .font(.callout.weight(on ? .semibold : .regular))
                     .foregroundStyle(on ? .primary : .secondary)
                     .lineLimit(1)
@@ -112,8 +112,8 @@ struct ProfileSwitcher: View {
         }
         .buttonStyle(.plain)
         .modifier(NumberShortcut(index: index))
-        .help(index < 9 ? "\(p.name)  ⌘\(index + 1)" : p.name)
-        .accessibilityLabel(p.name + (needs ? ", not calibrated" : ""))
+        .help(index < 9 ? "\(p.displayName)  ⌘\(index + 1)" : p.displayName)
+        .accessibilityLabel(needs ? L10n.tr("%@, not calibrated", p.displayName) : p.displayName)
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 }
@@ -136,7 +136,7 @@ struct ProfilePicker: View {
     var body: some View {
         Picker("Profile", selection: Binding(get: { app.config.activeProfileID }, set: { app.switchProfile(to: $0) })) {
             ForEach(app.config.profiles) { p in
-                Label(p.name, systemImage: p.symbol).tag(p.id)
+                Label(p.displayName, systemImage: p.symbol).tag(p.id)
             }
         }
         .pickerStyle(.menu)
@@ -164,7 +164,7 @@ struct ProfilesPane: View {
                     Text("Profiles")
                 } footer: {
                     HStack(alignment: .firstTextBaseline) {
-                        Text("Switch from the LidTap menu, or with ⌘1–⌘\(min(app.config.profiles.count, 9)) while it's open.")
+                        Text(L10n.tr("Switch from the LidTap menu, or with ⌘1–⌘%d while it's open.", min(app.config.profiles.count, 9)))
                         Spacer()
                         Button("Add Profile…") { editing = .new }.disabled(!app.canChangeProfile)
                     }
@@ -178,7 +178,7 @@ struct ProfilesPane: View {
             }
         }
         .sheet(item: $editing) { mode in ProfileEditor(mode: mode).environment(app) }
-        .confirmationDialog("Delete “\(deleting?.name ?? "")”?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
+        .confirmationDialog(L10n.tr("Delete “%@”?", deleting?.displayName ?? ""), isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
             Button("Delete Profile", role: .destructive) {
                 if let p = deleting { withAnimation(DS.Motion.state) { app.deleteProfile(p.id) } }
                 deleting = nil
@@ -206,7 +206,7 @@ struct ProfilesPane: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(!app.canChangeProfile)
-            Text("What you've set up so far is kept as your “\(app.config.activeProfile?.name ?? Profile.defaultName)” profile.")
+            Text(L10n.tr("What you've set up so far is kept as your “%@” profile.", app.config.activeProfile?.displayName ?? Profile.localizedName(Profile.defaultName)))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -221,7 +221,7 @@ struct ProfilesPane: View {
             ProfileIcon(symbol: p.symbol, size: 32, active: active)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(p.name).font(.body.weight(.medium))
+                    Text(p.displayName).font(.body.weight(.medium))
                     if active {
                         Text("In Use")
                             .font(.caption2.weight(.semibold))
@@ -264,7 +264,7 @@ struct ProfilesPane: View {
     @ViewBuilder
     private func actions(_ p: Profile, _ needsCalibration: Bool) -> some View {
         Button("Edit…") { editing = .edit(p) }
-        Button(needsCalibration ? "Calibrate…" : "Calibrate Again…") { app.calibrateProfile(p.id) }
+        Button(L10n.tr(needsCalibration ? "Calibrate…" : "Calibrate Again…")) { app.calibrateProfile(p.id) }
             .disabled(!app.canChangeProfile)
         Divider()
         Button("Delete…", role: .destructive) { deleting = p }
@@ -298,7 +298,7 @@ struct ProfileEditor: View {
     init(mode: Mode) {
         self.mode = mode
         if case .edit(let p) = mode {
-            _name = State(initialValue: p.name)
+            _name = State(initialValue: p.displayName)
             _symbol = State(initialValue: p.symbol)
         }
     }
@@ -306,7 +306,7 @@ struct ProfileEditor: View {
     private var isNew: Bool { if case .new = mode { true } else { false } }
     private var editingID: String? { if case .edit(let p) = mode { p.id } else { nil } }
     private var problem: String? { Profile.problem(with: name, among: app.config.profiles, excluding: editingID) }
-    private var currentName: String { app.config.activeProfile?.name ?? Profile.defaultName }
+    private var currentName: String { app.config.activeProfile?.displayName ?? Profile.localizedName(Profile.defaultName) }
     private var canCopy: Bool { app.dataset.zoneTapCount > 0 }
 
     var body: some View {
@@ -316,8 +316,8 @@ struct ProfileEditor: View {
                     .contentTransition(.symbolEffect(.replace))
                     .animation(DS.Motion.state, value: symbol)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(isNew ? "New Profile" : "Edit Profile").font(.title3.weight(.semibold))
-                    Text(isNew ? "A setup for one place you use your Mac." : "Rename it or pick another icon.")
+                    Text(isNew ? L10n.tr("New Profile") : L10n.tr("Edit Profile")).font(.title3.weight(.semibold))
+                    Text(isNew ? L10n.tr("A setup for one place you use your Mac.") : L10n.tr("Rename it or pick another icon."))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -334,7 +334,7 @@ struct ProfileEditor: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                caption("Icon")
+                caption(L10n.tr("Icon"))
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(34), spacing: 8), count: 10), alignment: .leading, spacing: 8) {
                     ForEach(Profile.symbols, id: \.self) { s in symbolButton(s) }
                 }
@@ -342,15 +342,15 @@ struct ProfileEditor: View {
 
             if isNew {
                 VStack(alignment: .leading, spacing: 8) {
-                    caption("Start with")
-                    option(selected: !copyTaps, symbol: "scope", title: "Calibrate on the new surface",
-                           detail: "Recommended: taps feel different on each surface. About two minutes.") { copyTaps = false }
-                    option(selected: copyTaps, symbol: "doc.on.doc", title: "A copy of “\(currentName)”",
-                           detail: canCopy ? "Ready right away. Calibrate later if taps are misread." : "“\(currentName)” isn't calibrated yet.") { copyTaps = true }
+                    caption(L10n.tr("Start with"))
+                    option(selected: !copyTaps, symbol: "scope", title: L10n.tr("Calibrate on the new surface"),
+                           detail: L10n.tr("Recommended: taps feel different on each surface. About two minutes.")) { copyTaps = false }
+                    option(selected: copyTaps, symbol: "doc.on.doc", title: L10n.tr("A copy of “%@”", currentName),
+                           detail: canCopy ? L10n.tr("Ready right away. Calibrate later if taps are misread.") : L10n.tr("“%@” isn't calibrated yet.", currentName)) { copyTaps = true }
                         .disabled(!canCopy)
                     Text(app.config.hasProfiles
-                         ? "Zone actions and sensitivity start as a copy of “\(currentName)”. Change them any time."
-                         : "Zone actions and sensitivity start as a copy of your current setup, which is kept as “\(currentName)”.")
+                         ? L10n.tr("Zone actions and sensitivity start as a copy of “%@”. Change them any time.", currentName)
+                         : L10n.tr("Zone actions and sensitivity start as a copy of your current setup, which is kept as “%@”.", currentName))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -360,7 +360,7 @@ struct ProfileEditor: View {
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
-                Button(isNew ? (copyTaps ? "Create Profile" : "Create and Calibrate") : "Save", action: commit)
+                Button(L10n.tr(isNew ? (copyTaps ? "Create Profile" : "Create and Calibrate") : "Save"), action: commit)
                     .keyboardShortcut(.defaultAction)
                     .disabled(problem != nil)
             }
@@ -376,14 +376,20 @@ struct ProfileEditor: View {
 
     private var suggestions: some View {
         FlowLayout(spacing: 6) {
-            ForEach(Profile.suggestions.filter { s in !app.config.profiles.contains { $0.name.caseInsensitiveCompare(s.name) == .orderedSame } },
+            ForEach(Profile.suggestions.filter { s in
+                        let label = L10n.tr(s.name)
+                        return !app.config.profiles.contains {
+                            $0.name.caseInsensitiveCompare(s.name) == .orderedSame || $0.displayName.caseInsensitiveCompare(label) == .orderedSame
+                        }
+                    },
                     id: \.name) { s in
-                let picked = name == s.name
+                let label = L10n.tr(s.name)
+                let picked = name == label
                 Button {
-                    name = s.name
+                    name = label
                     symbol = s.symbol
                 } label: {
-                    Label(s.name, systemImage: s.symbol)
+                    Label(label, systemImage: s.symbol)
                         .font(.callout)
                         .lineLimit(1)
                         .fixedSize()

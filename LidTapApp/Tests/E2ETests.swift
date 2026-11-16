@@ -29,7 +29,7 @@ func endToEndTests() {
 
     let launch = Process()
     launch.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-    launch.arguments = ["-n", "-a", appURL.path, "--env", "LIDTAP_DATA_DIR=\(dir.path)", "--args", "--test-hooks"]
+    launch.arguments = ["-n", "-a", appURL.path, "--env", "LIDTAP_DATA_DIR=\(dir.path)", "--args", "-AppleLanguages", "(en)", "--test-hooks"]
     try? launch.run()
     launch.waitUntilExit()
 

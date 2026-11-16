@@ -35,6 +35,7 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BUILD/LidTap" "$APP/Contents/MacOS/LidTap"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+for lproj in Resources/*.lproj; do cp -R "$lproj" "$APP/Contents/Resources/"; done
 if [ ! -f "$BUILD/AppIcon.icns" ]; then
   swiftc_ -O scripts/make_icon.swift -o "$BUILD/make_icon"
   rm -rf "$BUILD/AppIcon.iconset"
